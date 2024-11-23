@@ -22,6 +22,19 @@ type SelectLeadNumber = {
   leadNumber: number;
 };
 
+type DatePickerProps = {
+  selectedDate: string;
+  handleDateChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+};
+
+type ButtonVarients = "Primary" | "Secondary" | "Tertiary";
+
+type ButtonProps = {
+  btnText: string;
+  varient?: ButtonVarients;
+  onClick: () => void;
+};
+
 type SalesQuotationHeaderSectionProps = {
   selectedCompany: BaseOptions | null;
   sqNumber: string;
@@ -108,6 +121,31 @@ const Layout = ({ children }: LayoutProps) => {
   );
 };
 
+const Button = ({ btnText, varient = "Primary", onClick }: ButtonProps) => {
+  const getButtonClasses = (varient: ButtonVarients) => {
+    switch (varient) {
+      case "Primary":
+        return "bg-blue-400 text-white hover:bg-white hover:text-blue-400";
+      case "Secondary":
+        return "bg-red-400 text-white hover:bg-white hover:text-red-400";
+      case "Tertiary":
+        return "bg-green-400 text-white hover:bg-white hover:text-green-400";
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <button
+      type="submit"
+      className={`border px-4 py-2 rounded-md ${getButtonClasses(varient)}`}
+      onClick={() => onClick()}
+    >
+      {btnText}
+    </button>
+  );
+};
+
 const Select = <T extends BaseOptions>({
   placeholder,
   optionsList,
@@ -148,6 +186,17 @@ const Select = <T extends BaseOptions>({
   );
 };
 
+const DatePicker = ({ selectedDate, handleDateChange }: DatePickerProps) => {
+  return (
+    <input
+      type="date"
+      value={new Date(selectedDate).toISOString().split("T")[0]}
+      onChange={handleDateChange}
+      className="border px-2 py-1 rounded"
+    />
+  );
+};
+
 const SalesQuotationHeaderSection = ({
   selectedCompany,
   sqNumber,
@@ -179,17 +228,12 @@ const SalesQuotationHeaderSection = ({
         <span>{sqNumber}</span>
         <div className="flex items-center justify-center w-[152.5px] h-[36px]">
           {isDateCalendarOpen ? (
-            <input
-              type="date"
-              value={new Date(sqDate).toISOString().split("T")[0]}
-              onChange={handleDateChange}
-              className="border px-2 py-1 rounded"
+            <DatePicker
+              selectedDate={sqDate}
+              handleDateChange={handleDateChange}
             />
           ) : (
-            <span
-              className="cursor-pointer text-blue-600"
-              onClick={handleDateCalendarToggle}
-            >
+            <span className="cursor-pointer" onClick={handleDateCalendarToggle}>
               {sqDate}
             </span>
           )}
@@ -200,15 +244,33 @@ const SalesQuotationHeaderSection = ({
 };
 
 const SalesQuotationAddressSection = () => {
-  return <div className="h-[200px] pb-4">Address</div>;
+  return (
+    <div className="h-[280px] pb-4 gap-4 flex items-start justify-between">
+      <div className="w-1/3 border-r-2 h-full">Billing Address</div>
+      <div className="w-1/3 border-r-2 h-full">Client Billing Address</div>
+      <div className="w-1/3 h-full">Client Shipping Address</div>
+    </div>
+  );
 };
 
 const SalesQuotationItemTableSection = () => {
-  return <div className="h-[280px] overflow-scroll mb-4">Item table</div>;
+  return (
+    <div className="h-[calc(100vh-480px)] overflow-scroll mb-4 border-y-2">Item table</div>
+  );
 };
 
 const SalesQuotationFooterSection = () => {
-  return <div>Footer</div>;
+  const handleSubmit = () => {};
+  const handleCancel = () => {};
+
+  return (
+    <div className="flex items-center justify-end pb-4">
+      <div className="flex items-center justify-center gap-4">
+        <Button onClick={handleCancel} btnText="Cancel" varient="Secondary" />
+        <Button onClick={handleSubmit} btnText="Submit" varient="Primary" />
+      </div>
+    </div>
+  );
 };
 
 const SalesQuotation = () => {
@@ -222,7 +284,7 @@ const SalesQuotation = () => {
     setSelectedCompanyLeadNumberDropDown,
   ] = useState<SelectLeadNumber[] | null>(null);
   const [sqNumber] = useState(generateSQNumber(BASE_SQ_TAG));
-  const [sqDate, setSqDate] = useState(generateDate());
+  const [sqDate, setSqDate] = useState<string>(generateDate());
   const [isDateCalendarOpen, setIsDateCalendarOpen] = useState(false);
 
   const handleCompanySelect = (option: BaseOptions) => {
@@ -249,7 +311,7 @@ const SalesQuotation = () => {
     setIsDateCalendarOpen(false);
   };
   return (
-    <div className="">
+    <div className="flex flex-col flex-1 justify-between">
       <SalesQuotationHeaderSection
         selectedCompany={selectedCompany}
         sqNumber={sqNumber}
