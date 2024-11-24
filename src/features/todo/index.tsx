@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { v4 } from "uuid";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -35,6 +36,44 @@ type ButtonProps = {
   onClick: () => void;
 };
 
+type TableRowData = {
+  id: string;
+  itemName: string;
+  itemCode: number;
+  itemDescription: string;
+  taxRate: number;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  total: number;
+};
+
+type TableColumnsProps<T> = {
+  label: string;
+  field: keyof T;
+};
+
+type TableComponentProps<T, U> = {
+  data: T[] | [];
+  columns: U[] | [];
+  showAddIcon?: boolean;
+  handleAddIconClick?: () => void;
+};
+
+type BaseAddress = {
+  contactPerson: string;
+  contactNumber: string;
+  companyAddress: string;
+  panNumber: string;
+  branchName: string;
+};
+
+type Address = {
+  billingAddress: BaseAddress;
+  clientBillingAddress: BaseAddress;
+  clientShippingAddress: BaseAddress;
+};
+
 type SalesQuotationHeaderSectionProps = {
   selectedCompany: BaseOptions | null;
   sqNumber: string;
@@ -46,6 +85,18 @@ type SalesQuotationHeaderSectionProps = {
   handleDateCalendarToggle: () => void;
   handleCompanySelect: (option: BaseOptions) => void;
   handleCompanyLeadNumberSelect: (option: SelectLeadNumber) => void;
+};
+
+type SalesQuotationAddressSectionProps = {
+  address: Address;
+  isShippingAddressSame: boolean;
+  handleToggleIsShippingAddressSame: () => void;
+};
+
+type SalesQuotationItemTableSectionProps = {
+  itemTableDetails: TableRowData[];
+  itemTableColumns: TableColumnsProps<TableRowData>[];
+  handleAddTableRow: () => void;
 };
 
 const BASE_SQ_TAG = "SQ-2024";
@@ -85,6 +136,41 @@ const LEAD_NUMBERS = [
     value: 4,
     label: "Yahoo",
     leadNumber: 7890,
+  },
+];
+
+const ITEM_TABLE_COLUMNS: TableColumnsProps<TableRowData>[] = [
+  {
+    label: "Item",
+    field: "itemName",
+  },
+  {
+    label: "Code",
+    field: "itemCode",
+  },
+  {
+    label: "Description",
+    field: "itemDescription",
+  },
+  {
+    label: "Tax Rate",
+    field: "taxRate",
+  },
+  {
+    label: "Qty.",
+    field: "quantity",
+  },
+  {
+    label: "Unit Price",
+    field: "unitPrice",
+  },
+  {
+    label: "Disc.%",
+    field: "discount",
+  },
+  {
+    label: "Total",
+    field: "total",
   },
 ];
 
@@ -197,6 +283,61 @@ const DatePicker = ({ selectedDate, handleDateChange }: DatePickerProps) => {
   );
 };
 
+const BaseInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
+  return <input className="border px-2 py-1 rounded" {...props} />;
+};
+
+const TableComponent = <T, U extends TableColumnsProps<T>>({
+  data,
+  columns,
+  showAddIcon = false,
+  handleAddIconClick = () => {},
+}: TableComponentProps<T, U>) => {
+  return (
+    <div style={{ overflowX: "auto", position: "relative" }}>
+      {showAddIcon && (
+        <div
+          className="absolute -right-2 -top-2 bottom-auto cursor-pointer"
+          onClick={handleAddIconClick}
+        >
+          <p className="w-4 h-4 p-4 bg-blue-400 rounded-full flex items-center justify-center hover:text-blue-400 hover:bg-white text-white">
+            +
+          </p>
+        </div>
+      )}
+      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+        <thead>
+          <tr className="border-2 p-2 text-left bg-gray-100">
+            <th className="p-2">S.No.</th>
+            {columns.map((col, index) => (
+              <th className="p-2" key={index}>
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, rowIndex) => (
+            <tr
+              key={rowIndex}
+              className={`hover:bg-gray-100 cursor-pointer border-x-2 ${
+                rowIndex % 2 === 0 ? "" : "bg-gray-100"
+              }`}
+            >
+              <td className="text-left p-2 border-b-2">{rowIndex + 1}.</td>
+              {columns.map((col, colIndex) => (
+                <td key={colIndex} className="text-left p-2 border-b-2">
+                  {String(row[col.field])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 const SalesQuotationHeaderSection = ({
   selectedCompany,
   sqNumber,
@@ -243,19 +384,118 @@ const SalesQuotationHeaderSection = ({
   );
 };
 
-const SalesQuotationAddressSection = () => {
+const SalesQuotationAddressSection = ({
+  address,
+  isShippingAddressSame,
+  handleToggleIsShippingAddressSame,
+}: SalesQuotationAddressSectionProps) => {
   return (
-    <div className="h-[280px] pb-4 gap-4 flex items-start justify-between">
-      <div className="w-1/3 border-r-2 h-full">Billing Address</div>
-      <div className="w-1/3 border-r-2 h-full">Client Billing Address</div>
-      <div className="w-1/3 h-full">Client Shipping Address</div>
+    <div className="h-[260px] pb-4 gap-4 flex items-start justify-between">
+      <div className="w-1/3 border-r-2 h-full">
+        Billing Address
+        <div className="flex flex-col gap-2 pt-4 pr-4">
+          <BaseInput
+            placeholder="Branch Name"
+            value={address.billingAddress.branchName}
+          />
+          <BaseInput
+            placeholder="Company Address"
+            value={address.billingAddress.companyAddress}
+          />
+          <BaseInput
+            placeholder="PAN Number"
+            value={address.billingAddress.panNumber}
+          />
+          <BaseInput
+            placeholder="Contact Person"
+            value={address.billingAddress.contactPerson}
+          />
+          <BaseInput
+            placeholder="Contact Number"
+            value={address.billingAddress.contactNumber}
+          />
+        </div>
+      </div>
+      <div className="w-1/3 border-r-2 h-full">
+        Client Billing Address
+        <div className="flex flex-col gap-2 pt-4 pr-4">
+          <BaseInput
+            placeholder="Branch Name"
+            value={address.clientBillingAddress.branchName}
+          />
+          <BaseInput
+            placeholder="Company Address"
+            value={address.clientBillingAddress.companyAddress}
+          />
+          <BaseInput
+            placeholder="PAN Number"
+            value={address.clientBillingAddress.panNumber}
+          />
+          <BaseInput
+            placeholder="Contact Person"
+            value={address.clientBillingAddress.contactPerson}
+          />
+          <BaseInput
+            placeholder="Contact Number"
+            value={address.clientBillingAddress.contactNumber}
+          />
+        </div>
+      </div>
+      <div className="w-1/3 h-full">
+        <div className="flex items-center justify-between gap-4">
+          Client Shipping Address
+          <div
+            className="flex items-center justify-start gap-2 cursor-pointer"
+            onClick={handleToggleIsShippingAddressSame}
+          >
+            <BaseInput type="checkbox" checked={isShippingAddressSame} />
+            <label>Mark As Same</label>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 pt-4 pr-4">
+          <BaseInput
+            placeholder="Branch Name"
+            value={address.clientShippingAddress.branchName}
+          />
+          <BaseInput
+            placeholder="Company Address"
+            value={address.clientShippingAddress.companyAddress}
+          />
+          <BaseInput
+            placeholder="PAN Number"
+            value={address.clientShippingAddress.panNumber}
+          />
+          <BaseInput
+            placeholder="Contact Person"
+            value={address.clientShippingAddress.contactPerson}
+          />
+          <BaseInput
+            placeholder="Contact Number"
+            value={address.clientShippingAddress.contactNumber}
+          />
+        </div>
+      </div>
     </div>
   );
 };
 
-const SalesQuotationItemTableSection = () => {
+const SalesQuotationItemTableSection = ({
+  itemTableDetails,
+  itemTableColumns,
+  handleAddTableRow,
+}: SalesQuotationItemTableSectionProps) => {
   return (
-    <div className="h-[calc(100vh-480px)] overflow-scroll mb-4 border-y-2">Item table</div>
+    <div className="h-[calc(100vh-460px)] flex gap-4 mb-4 border-y-2">
+      <div className="w-2/3 border-r-2 h-full -mr-2 pt-2 pr-2 overflow-scroll ">
+        <TableComponent
+          showAddIcon
+          data={itemTableDetails}
+          handleAddIconClick={handleAddTableRow}
+          columns={itemTableColumns}
+        />
+      </div>
+      <div className="w-1/3 h-full">Calculation</div>
+    </div>
   );
 };
 
@@ -286,6 +526,43 @@ const SalesQuotation = () => {
   const [sqNumber] = useState(generateSQNumber(BASE_SQ_TAG));
   const [sqDate, setSqDate] = useState<string>(generateDate());
   const [isDateCalendarOpen, setIsDateCalendarOpen] = useState(false);
+  const [address, setAddress] = useState<Address>({
+    billingAddress: {
+      contactPerson: "",
+      contactNumber: "",
+      companyAddress: "",
+      panNumber: "",
+      branchName: "",
+    },
+    clientBillingAddress: {
+      contactPerson: "",
+      contactNumber: "",
+      companyAddress: "",
+      panNumber: "",
+      branchName: "",
+    },
+    clientShippingAddress: {
+      contactPerson: "",
+      contactNumber: "",
+      companyAddress: "",
+      panNumber: "",
+      branchName: "",
+    },
+  });
+  const [isShippingAddressSame, setIsShippingAddressSame] = useState(false);
+  const [itemTableDetails, setItemTableDetails] = useState<TableRowData[]>([
+    {
+      id: v4(),
+      itemName: "",
+      itemCode: 0,
+      itemDescription: "",
+      taxRate: 0,
+      quantity: 0,
+      unitPrice: 0,
+      discount: 0,
+      total: 0,
+    },
+  ]);
 
   const handleCompanySelect = (option: BaseOptions) => {
     setSelectedCompany(option);
@@ -310,6 +587,27 @@ const SalesQuotation = () => {
     setSqDate(selectedDate.toDateString());
     setIsDateCalendarOpen(false);
   };
+
+  const handleToggleIsShippingAddressSame = () => {
+    setIsShippingAddressSame(!isShippingAddressSame);
+  };
+
+  const handleAddTableRow = () => {
+    const newRowData = {
+      id: v4(),
+      itemName: "",
+      itemCode: 0,
+      itemDescription: "",
+      taxRate: 0,
+      quantity: 0,
+      unitPrice: 0,
+      discount: 0,
+      total: 0,
+    };
+    const updatedItemTableDetails = [...itemTableDetails, newRowData];
+    setItemTableDetails(updatedItemTableDetails);
+  };
+
   return (
     <div className="flex flex-col flex-1 justify-between">
       <SalesQuotationHeaderSection
@@ -324,8 +622,16 @@ const SalesQuotation = () => {
         handleCompanySelect={handleCompanySelect}
         handleCompanyLeadNumberSelect={handleCompanyLeadNumberSelect}
       />
-      <SalesQuotationAddressSection />
-      <SalesQuotationItemTableSection />
+      <SalesQuotationAddressSection
+        address={address}
+        isShippingAddressSame={isShippingAddressSame}
+        handleToggleIsShippingAddressSame={handleToggleIsShippingAddressSame}
+      />
+      <SalesQuotationItemTableSection
+        itemTableDetails={itemTableDetails}
+        itemTableColumns={ITEM_TABLE_COLUMNS}
+        handleAddTableRow={handleAddTableRow}
+      />
       <SalesQuotationFooterSection />
     </div>
   );
