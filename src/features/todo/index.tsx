@@ -174,6 +174,14 @@ const ITEM_TABLE_COLUMNS: TableColumnsProps<TableRowData>[] = [
   },
 ];
 
+const BILLING_ADDRESS_WITH_COMPANY_VALUES = {
+  contactPerson: "John Doe",
+  contactNumber: "9876543210",
+  companyAddress: "Google",
+  panNumber: "PAN123",
+  branchName: "Google Branch",
+};
+
 const generateSQNumber = (baseTag: string) => {
   const suffixTag = new Date();
   const randomTag = suffixTag.getSeconds();
@@ -572,6 +580,14 @@ const SalesQuotation = () => {
     filteredLeadNumbersList.length > 0 &&
       setSelectedLeadNumber(filteredLeadNumbersList[0]);
     setSelectedCompanyLeadNumberDropDown(filteredLeadNumbersList);
+    const updatedAddress = {
+      ...address,
+      billingAddress: {
+        ...address.billingAddress,
+        ...BILLING_ADDRESS_WITH_COMPANY_VALUES,
+      },
+    }
+    setAddress(updatedAddress);
   };
 
   const handleCompanyLeadNumberSelect = (option: SelectLeadNumber) => {
